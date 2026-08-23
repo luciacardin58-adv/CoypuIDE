@@ -32,6 +32,32 @@ Class {
 	#tag : 'button'
 }
 
+{ #category : 'examples' }
+ICIndicatorButton class >> exampleThreeSizes [ 
+	<script>
+	| container |
+	container := BlElement new
+		             layout: (BlGridLayout new
+				              columnCount: 3;
+				              cellSpacing: 20;
+				              yourself);
+		             padding: (BlInsets all: 20);
+		             background: Color veryVeryDarkGray;
+		             constraintsDo: [ :c |
+			             c horizontal fitContent.
+			             c vertical fitContent ];
+		             yourself.
+
+	#( 40 80 160 ) do: [ :each |
+		| indicator |
+		indicator := self new widgetSize: each.
+		each = 80 ifTrue: [ indicator toggle ].
+		container addChild: indicator ].
+
+	container openInSpace
+
+]
+
 { #category : 'initialization' }
 ICIndicatorButton >> applyButtonSize [
 	super applyButtonSize.

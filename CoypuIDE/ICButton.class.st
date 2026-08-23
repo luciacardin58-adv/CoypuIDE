@@ -5,19 +5,18 @@ Class {
 	#name : 'ICButton',
 	#superclass : 'BlElement',
 	#instVars : [
-		'widgetSize',
 		'button',
-		'isOn',
-		'currentValue',
-		'callbackDown',
-		'callBackUp',
+		'buttonEventHandlers',
 		'callback',
-		'isToggleable',
-		'onColor',
-		'offColor',
-		'id',
+		'currentValue',
 		'fitsContent',
-		'buttonEventHandlers'
+		'id',
+		'inputLabel',
+		'inputText',
+		'isToggleable',
+		'offColor',
+		'onColor',
+		'widgetSize'
 	],
 	#category : 'CoypuIDE-button',
 	#package : 'CoypuIDE',
@@ -63,6 +62,41 @@ container openInSpace.
 
 ]
 
+{ #category : 'as yet unclassified' }
+ICButton class >> exampleFamilyAtThreeSizes [ 
+	<script>
+	| container |
+	container := BlElement new
+		             layout: (BlGridLayout new
+				              columnCount: 3;
+				              cellSpacing: 20;
+				              yourself);
+		             padding: (BlInsets all: 20);
+		             background: Color veryVeryDarkGray;
+		             constraintsDo: [ :c |
+			             c horizontal fitContent.
+			             c vertical fitContent ];
+		             yourself.
+
+	#( 40 80 160 ) do: [ :each |
+		container addChild: (ICIndicatorButton new widgetSize: each) ].
+	#( 40 80 160 ) do: [ :each |
+		container addChild: (ICOnOffButton new widgetSize: each) ].
+	#( 40 80 160 ) do: [ :each |
+		container addChild: (ICLabelButton new
+				 inputText: 'MONO';
+				 widgetSize: each;
+				 yourself) ].
+	#( 40 80 160 ) do: [ :each |
+		container addChild: (ICCheckBox new
+				 inputText: 'SYNC';
+				 widgetSize: each;
+				 yourself) ].
+
+	container openInSpace
+
+]
+
 { #category : 'api - events' }
 ICButton >> addButtonEventHandler: aHandler [
 	self buttonEventHandlers add: aHandler.
@@ -74,8 +108,13 @@ ICButton >> applyButtonSize [
 	"Everything my button wears that depends on size. Subclasses add corner
 	radius, border, shadow and label size by overriding me and sending super."
 
-	button size: self buttonSize
+	button extent: self buttonSize
+]
 
+{ #category : 'size' }
+ICButton >> applyLabelSize [
+	inputLabel ifNotNil: [
+		inputLabel text: (self labelText: self labelString) ]
 ]
 
 { #category : 'size' }
@@ -144,18 +183,6 @@ ICButton >> buttonSize [
 ]
 
 { #category : 'accessing' }
-ICButton >> callBackUp [
-
-	^ callBackUp
-]
-
-{ #category : 'accessing' }
-ICButton >> callBackUp: aBlock [
-
-	callBackUp := aBlock
-]
-
-{ #category : 'accessing' }
 ICButton >> callback [
 
 	^ callback ifNil: [ [ :v |  ] ]
@@ -165,18 +192,6 @@ ICButton >> callback [
 ICButton >> callback: aBlock [
 
 	callback := aBlock
-]
-
-{ #category : 'accessing' }
-ICButton >> callbackDown [
-
-	^ callbackDown
-]
-
-{ #category : 'accessing' }
-ICButton >> callbackDown: aBlock [
-
-	callbackDown := aBlock
 ]
 
 { #category : 'size' }
@@ -268,6 +283,21 @@ ICButton >> fontSizeRatio [
 
 ]
 
+{ #category : 'size' }
+ICButton >> glowBorderWidth [
+	^ ((self borderWidth * 3 / 4) max: 1) rounded
+]
+
+{ #category : 'size' }
+ICButton >> glowWidth [
+	^ self sizeUnit * self glowWidthRatio
+]
+
+{ #category : 'defaults' }
+ICButton >> glowWidthRatio [
+	^ 1 / 4
+]
+
 { #category : 'accessing' }
 ICButton >> id [ 
 ^ id
@@ -325,6 +355,20 @@ ICButton >> initializeEvents [
 ]
 
 { #category : 'initialization' }
+ICButton >> initializeLabel [
+	"Idempotent: safe to send whenever the text changes."
+
+	inputLabel ifNil: [
+		inputLabel := BlTextElement new
+			              constraintsDo: [ :c |
+				              c frame horizontal alignCenter.
+				              c frame vertical alignCenter ];
+			              yourself.
+		self labelHost addChild: inputLabel ].
+	self applyLabelSize
+]
+
+{ #category : 'initialization' }
 ICButton >> initializeWidget [
 	"No extent, no padding: applySize owns both."
 
@@ -332,21 +376,17 @@ ICButton >> initializeWidget [
 	self layout: BlFrameLayout new
 ]
 
-{ #category : 'evaluating' }
-ICButton >> initializeWidgetSize [
-	widgetSize:= 200@200.
+{ #category : 'accessing' }
+ICButton >> inputText [
+	^ inputText
+
 ]
 
 { #category : 'accessing' }
-ICButton >> isOn [
+ICButton >> inputText: aString [
+	inputText := aString.
+	self initializeLabel
 
-	^ isOn
-]
-
-{ #category : 'accessing' }
-ICButton >> isOn: anObject [
-
-	isOn := anObject
 ]
 
 { #category : 'accessing' }
@@ -359,6 +399,39 @@ ICButton >> isToggleable: aBoolean [
 	self isToggleable = aBoolean ifTrue: [ ^ self ].
 	isToggleable := aBoolean.
 	self eventTarget ifNotNil: [ self initializeEvents ]
+]
+
+{ #category : 'accessing' }
+ICButton >> labelColor [
+	^ Color white
+]
+
+{ #category : 'initialization' }
+ICButton >> labelHost [
+	"The element my label lives in."
+
+	^ button
+]
+
+{ #category : 'accessing' }
+ICButton >> labelString [
+	"What my label displays. Subclasses that derive it from state override me."
+
+	^ inputText
+]
+
+{ #category : 'size' }
+ICButton >> labelText: aString [
+	^ self labelText: aString color: self labelColor
+
+]
+
+{ #category : 'size' }
+ICButton >> labelText: aString color: aColor [
+	^ aString asRopedText attributes: {
+			  (BlTextForegroundAttribute paint: aColor).
+			  BlFontWeightAttribute bold.
+			  (BlFontSizeAttribute size: self fontSize) }
 ]
 
 { #category : 'accessing' }

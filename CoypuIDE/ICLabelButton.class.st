@@ -5,14 +5,38 @@ By default a click button, can become a toggle by sending the message isToggleab
 Class {
 	#name : 'ICLabelButton',
 	#superclass : 'ICButton',
-	#instVars : [
-		'inputText',
-		'inputLabel'
-	],
 	#category : 'CoypuIDE-button',
 	#package : 'CoypuIDE',
 	#tag : 'button'
 }
+
+{ #category : 'examples' }
+ICLabelButton class >> exampleThreeSizes [
+
+	
+	<script>
+	| container |
+	container := BlElement new
+		             layout: (BlGridLayout new
+				              columnCount: 3;
+				              cellSpacing: 20;
+				              yourself);
+		             padding: (BlInsets all: 20);
+		             background: Color veryVeryDarkGray;
+		             constraintsDo: [ :c |
+			             c horizontal fitContent.
+			             c vertical fitContent ];
+		             yourself.
+
+	#( 40 80 160 ) do: [ :each |
+		container addChild: (self new
+				 inputText: 'MONO';
+				 widgetSize: each;
+				 yourself) ].
+
+	container openInSpace
+
+]
 
 { #category : 'instance creation' }
 ICLabelButton class >> fromDictionary: aDictionary forDsp: aDsp [
@@ -51,32 +75,10 @@ ICLabelButton >> applyButtonSize [
 ]
 
 { #category : 'accessing' }
-ICLabelButton >> backColor [ 
-	^Color veryVeryDarkGray.
-]
-
-{ #category : 'accessing' }
 ICLabelButton >> buttonColor [ 
 	"^ Color lightGreen ."
 	"^Color cyan."
 	^ Color yellow.
-
-]
-
-{ #category : 'evaluating' }
-ICLabelButton >> configuredString: aString [
-	^ aString asRopedText attributes: {
-			  (BlTextForegroundAttribute paint: Color black).
-			  BlFontWeightAttribute bold.
-			  (BlFontSizeAttribute size: self fontSize) }
-]
-
-{ #category : 'evaluating' }
-ICLabelButton >> configuredStringDark: aString [
-	^ aString asRopedText attributes: {
-			  (BlTextForegroundAttribute paint: Color white).
-			  BlFontWeightAttribute bold.
-			  (BlFontSizeAttribute size: self fontSize) }
 
 ]
 
@@ -91,28 +93,12 @@ ICLabelButton >> defaultOffColor [
 	^ Color veryVeryDarkGray
 ]
 
-{ #category : 'size' }
-ICLabelButton >> glowBorderWidth [
-	^ ((self borderWidth * 3 / 4) max: 1) rounded
-
-]
-
 { #category : 'accessing' }
 ICLabelButton >> glowColor [ 
 	"^ Color green ."
 	"^ Color lightBlue."
 	^ Color yellow.
 
-]
-
-{ #category : 'size' }
-ICLabelButton >> glowWidth [
-	^ self sizeUnit * self glowWidthRatio
-]
-
-{ #category : 'defaults' }
-ICLabelButton >> glowWidthRatio [
-	^ 1 / 4
 ]
 
 { #category : 'initialization' }
@@ -128,44 +114,23 @@ ICLabelButton >> initializeButton [
 ]
 
 { #category : 'initialization' }
-ICLabelButton >> initializeLabel [
-	inputLabel ifNil: [
-		inputLabel := BlTextElement new
-			              constraintsDo: [ :c |
-				              c frame horizontal alignCenter.
-				              c frame vertical alignCenter ];
-			              yourself.
-		self button addChild: inputLabel ].
-	self applyLabelSize
-]
-
-{ #category : 'initialization' }
 ICLabelButton >> initializeWidget [
 	self background: self backColor.
 	self layout: BlGridLayout horizontal
 
 ]
 
-{ #category : 'size' }
-ICLabelButton >> initializeWidgetSize [ 
-	widgetSize:= 200@200.
-]
-
-{ #category : 'accessing' }
-ICLabelButton >> inputText [ 
-	^ inputText.
-]
-
-{ #category : 'accessing' }
-ICLabelButton >> inputText: aString [
-	inputText := aString.
-	self applyLabelSize
-]
-
 { #category : 'accessing' }
 ICLabelButton >> label: aString [
 	inputText := aString.
 	self initializeLabel
+]
+
+{ #category : 'accessing' }
+ICLabelButton >> labelColor [
+	^ self currentValue = 0
+		  ifTrue: [ Color white ]
+		  ifFalse: [ Color black ]
 ]
 
 { #category : 'evaluating' }
@@ -177,7 +142,8 @@ ICLabelButton >> lightDown [
 				 color: (self glowColor alpha: 1.0)
 				 offset: 0 @ 0
 				 width: self glowWidth).
-	inputLabel text: (self configuredString: inputText)
+	self applyLabelSize
+
 ]
 
 { #category : 'evaluating' }
@@ -189,18 +155,23 @@ ICLabelButton >> lightUp [
 				 color: (Color white alpha: 0.0)
 				 offset: 0 @ 0
 				 width: self shadowWidth).
-	inputLabel text: (self configuredStringDark: inputText)
+	self applyLabelSize
+
 ]
 
 { #category : 'accessing' }
-ICLabelButton >> offColor [ 
-	^ Color veryVeryDarkGray.
+ICLabelButton >> stateText [
+	^ inputLabel ifNil: [
+		  self currentValue = 0
+			  ifTrue: [ 'OFF' ]
+			  ifFalse: [ 'ON' ] ]
+
 ]
 
 { #category : 'evaluating' }
 ICLabelButton >> toggle [
 	self toggleValue.
-	self value = 0
+	self currentValue = 0
 		ifTrue: [ self lightUp ]
 		ifFalse: [ self lightDown ]
 ]

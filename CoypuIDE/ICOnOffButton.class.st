@@ -6,16 +6,38 @@ Use label: to change the the textLabel
 Class {
 	#name : 'ICOnOffButton',
 	#superclass : 'ICButton',
-	#instVars : [
-		'label',
-		'textLabel'
-	],
 	#category : 'CoypuIDE-button',
 	#package : 'CoypuIDE',
 	#tag : 'button'
 }
 
-{ #category : 'initialization' }
+{ #category : 'examples' }
+ICOnOffButton class >> exampleThreeSizes [ 
+
+	<script>
+	| container |
+	container := BlElement new
+		             layout: (BlGridLayout new
+				              columnCount: 3;
+				              cellSpacing: 20;
+				              yourself);
+		             padding: (BlInsets all: 20);
+		             background: Color veryVeryDarkGray;
+		             constraintsDo: [ :c |
+			             c horizontal fitContent.
+			             c vertical fitContent ];
+		             yourself.
+
+	#( 40 80 160 ) do: [ :each |
+		| onOff |
+		onOff := self new widgetSize: each.
+		each = 80 ifTrue: [ onOff toggle ].
+		container addChild: onOff ].
+
+	container openInSpace
+]
+
+{ #category : 'size' }
 ICOnOffButton >> applyButtonSize [
 	super applyButtonSize.
 	button
@@ -24,8 +46,7 @@ ICOnOffButton >> applyButtonSize [
 				 color: (Color black alpha: 1.0)
 				 offset: self borderWidth @ 0
 				 width: self shadowWidth).
-	textLabel ifNotNil: [
-		textLabel text: (self configuredString: self stateText) ]
+	self applyLabelSize
 ]
 
 { #category : 'defaults' }
@@ -61,25 +82,23 @@ ICOnOffButton >> initializeButton [
 				 c frame horizontal alignCenter.
 				 c frame vertical alignCenter ];
 			 yourself).
-	self textLabel: (BlTextElement new
-			 constraintsDo: [ :c |
-				 c frame horizontal alignCenter.
-				 c frame vertical alignCenter ];
-			 yourself).
-	button addChild: self textLabel.
-	self addChild: button
+	self addChild: button.
+	self initializeLabel
 ]
 
 { #category : 'accessing' }
-ICOnOffButton >> label [ 
-	^ label.
+ICOnOffButton >> labelColor [
+	^ Color black
+
+
 ]
 
 { #category : 'accessing' }
-ICOnOffButton >> label: aText [
-
-	label := aText.
-	textLabel text: (self configuredString: label)
+ICOnOffButton >> labelString [
+	^ inputText ifNil: [
+		  self currentValue = 0
+			  ifTrue: [ 'OFF' ]
+			  ifFalse: [ 'ON' ] ]
 ]
 
 { #category : 'initialization' }
@@ -95,45 +114,25 @@ ICOnOffButton >> shadowWidthRatio [
 	^ 1 / 8
 ]
 
-{ #category : 'defaults' }
-ICOnOffButton >> stateText [
-	^ label ifNil: [ self value = 0 ifTrue: [ 'OFF' ] ifFalse: [ 'ON' ] ]
-]
-
-{ #category : 'accessing' }
-ICOnOffButton >> textLabel [
-
-^ textLabel 
-]
-
-{ #category : 'accessing' }
-ICOnOffButton >> textLabel: aText [
-
-	textLabel := aText
-]
-
-{ #category : 'evaluating' }
+{ #category : 'size' }
 ICOnOffButton >> toggle [
-
 	self toggleValue.
-
-	self value = 0
+	self currentValue = 0
 		ifTrue: [
 			button
 				background: (Color gray alpha: 1.0);
-				border: (BlBorder paint: Color black width: 4);
+				border: (BlBorder paint: Color black width: self borderWidth);
 				effect: (BlGaussianShadowEffect
 						 color: (Color black alpha: 1.0)
-						 offset: 4 @ 0
-						 width: 10).
-			textLabel text: (self configuredString: 'OFF') ]
+						 offset: self borderWidth @ 0
+						 width: self shadowWidth) ]
 		ifFalse: [
 			button
 				background: (Color white alpha: 1.0);
-				border: (BlBorder paint: Color gray width: 3);
+				border: (BlBorder paint: Color gray width: self glowBorderWidth);
 				effect: (BlGaussianShadowEffect
 						 color: (Color gray alpha: 1.0)
 						 offset: 0 @ 0
-						 width: 15).
-			textLabel text: (self configuredString: 'ON') ]
+						 width: self glowWidth) ].
+	self applyLabelSize
 ]

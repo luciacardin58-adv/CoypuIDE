@@ -13,6 +13,35 @@ Class {
 	#tag : 'button'
 }
 
+{ #category : 'examples' }
+ICCheckBox class >> exampleThreeSizes [ 
+	<script>
+	| container |
+	container := BlElement new
+		             layout: (BlGridLayout new
+				              columnCount: 3;
+				              cellSpacing: 20;
+				              yourself);
+		             padding: (BlInsets all: 20);
+		             background: Color veryVeryDarkGray;
+		             constraintsDo: [ :c |
+			             c horizontal fitContent.
+			             c vertical fitContent ];
+		             yourself.
+
+	#( 40 80 160 ) do: [ :each |
+		| box |
+		box := self new
+			       inputText: 'SYNC';
+			       widgetSize: each;
+			       yourself.
+		each = 80 ifTrue: [ box toggle ].
+		container addChild: box ].
+
+	container openInSpace
+
+]
+
 { #category : 'evaluating' }
 ICCheckBox >> clickBox [
 
@@ -42,7 +71,7 @@ ICCheckBox >> initializeClickBox [
 			 geometry: (BlRoundedRectangleGeometry cornerRadius: 8);
 			 background: Color white;
 			 layout: BlFrameLayout new;
-			 size: 30 @ 32;
+			 extent: 30 @ 32;
 			 border: (BlBorder paint: Color darkGray width: 4)).
 	self initializeClickSymbol.
 	self addChild: clickBox
@@ -61,27 +90,6 @@ ICCheckBox >> initializeClickSymbol [
 	clickSymbol constraintsDo: [ :c |
 		c frame horizontal alignCenter.
 		c frame vertical alignCenter ]
-]
-
-{ #category : 'evaluating' }
-ICCheckBox >> initializeEvents [
-
-	clickBox addEventHandler: (BlEventHandler
-			 on: BlMouseDownEvent
-			 do: [ :anEvent |
-				 self toggle.
-				 self callback value: self value ]).
-
-	
-]
-
-{ #category : 'evaluating' }
-ICCheckBox >> initializeWidget [
-
-	self size: self widgetSize.
-	self background: self backColor.
-	self layout: BlLinearLayout horizontal .
-	self padding: (BlInsets all: 10)
 ]
 
 { #category : 'evaluating' }
