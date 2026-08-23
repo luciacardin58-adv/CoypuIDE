@@ -377,6 +377,11 @@ ICButton >> initializeWidget [
 ]
 
 { #category : 'accessing' }
+ICButton >> inputLabel [ 
+^ inputLabel 
+]
+
+{ #category : 'accessing' }
 ICButton >> inputText [
 	^ inputText
 
