@@ -62,6 +62,11 @@ ICOnOffButton >> configuredString: aString [
 
 ]
 
+{ #category : 'accessing' }
+ICOnOffButton >> defaultIsToggleable [
+	^ true
+]
+
 { #category : 'defaults' }
 ICOnOffButton >> fontSizeRatio [
 	^ 9 / 40

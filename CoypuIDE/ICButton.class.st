@@ -62,7 +62,7 @@ container openInSpace.
 
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'examples' }
 ICButton class >> exampleFamilyAtThreeSizes [ 
 	<script>
 	| container |

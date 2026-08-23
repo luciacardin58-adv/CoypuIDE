@@ -1,5 +1,26 @@
 "
-A simple checkbox, I have a bhaviour similar to a toggle button, but click is on the box, not on the label
+I am an ICCheckBox: a labelled box that shows a tick when my value is 1.
+Unlike my siblings, my click target is the box, not the button: clicking the label does nothing. I latch, so one click leaves the tick showing.
+
+```language=Pharo
+	ICCheckBox new
+		inputText: 'SYNC';
+		callback: [ :v | v traceCr ];
+		yourself
+```
+Sizing follows the family pattern: widgetSize: is my only size parameter and everything derives from it through applySize. My box takes three eighths of my shorter side (_clickBoxRatio_) and my tick fills it (_fontSizeRatio_):
+```language=Pharo
+	self new inputText: 'SYNC'; widgetSize: 160.
+```
+Send inputText: before widgetSize: so the label exists when the font is derived.
+
+The tick is added once at build time and shown or hidden by applyCheckVisibility.
+
+Override checkGlyph to use a different mark:
+```language=Pharo
+	ICCheckBox >> checkGlyph
+		^ (Unicode value: 16r2717) asString
+```
 "
 Class {
 	#name : 'ICCheckBox',
@@ -42,6 +63,34 @@ ICCheckBox class >> exampleThreeSizes [
 
 ]
 
+{ #category : 'size' }
+ICCheckBox >> applyButtonSize [
+
+	super applyButtonSize.
+	clickBox ifNotNil: [
+			clickBox
+				geometry:
+					(BlRoundedRectangleGeometry cornerRadius: self cornerRadius);
+				extent: self clickBoxSize;
+				border: (BlBorder paint: Color darkGray width: self borderWidth) ].
+	clickSymbol ifNotNil: [
+		clickSymbol text: (self labelText: self checkGlyph color: Color red) ].
+	self applyCheckVisibility
+]
+
+{ #category : 'initialization' }
+ICCheckBox >> applyCheckVisibility [
+	clickSymbol ifNotNil: [
+		self currentValue = 0
+			ifTrue: [ clickSymbol visibility: BlVisibility hidden ]
+			ifFalse: [ clickSymbol visibility: BlVisibility visible ] ]
+]
+
+{ #category : 'size' }
+ICCheckBox >> checkGlyph [
+	^ (Unicode value: 16r2713) asString
+]
+
 { #category : 'evaluating' }
 ICCheckBox >> clickBox [
 
@@ -54,7 +103,17 @@ ICCheckBox >> clickBox: aBlElement [
 clickBox := aBlElement 
 ]
 
-{ #category : 'api - events' }
+{ #category : 'defaults' }
+ICCheckBox >> clickBoxRatio [
+	^ 3 / 8
+]
+
+{ #category : 'size' }
+ICCheckBox >> clickBoxSize [
+	^ (self sizeUnit * self clickBoxRatio) asPoint
+]
+
+{ #category : 'accessing' }
 ICCheckBox >> defaultIsToggleable [
 	^ true
 ]
@@ -79,24 +138,16 @@ ICCheckBox >> initializeClickBox [
 
 { #category : 'initialization' }
 ICCheckBox >> initializeClickSymbol [
-
-	| check |
-	check := (Unicode value: 16r2713) asRopedText attributes: {
-			         (BlTextForegroundAttribute paint: Color red).
-			         BlFontWeightAttribute bold.
-			         (BlFontSizeAttribute size: 30) }.
-	clickSymbol := BlTextElement new text: check.
-
-	clickSymbol constraintsDo: [ :c |
-		c frame horizontal alignCenter.
-		c frame vertical alignCenter ]
+	clickSymbol := BlTextElement new
+		               constraintsDo: [ :c |
+			               c frame horizontal alignCenter.
+			               c frame vertical alignCenter ];
+		               yourself.
+	clickBox addChild: clickSymbol
 ]
 
-{ #category : 'evaluating' }
+{ #category : 'initialization' }
 ICCheckBox >> toggle [
-
 	self toggleValue.
-	self value = 0
-		ifTrue: [ clickBox removeChild: clickSymbol ]
-		ifFalse: [ clickBox addChild: clickSymbol ]
+	self applyCheckVisibility
 ]

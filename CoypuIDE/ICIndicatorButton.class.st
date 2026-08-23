@@ -73,6 +73,11 @@ ICIndicatorButton >> buttonInsetRatio [
 ]
 
 { #category : 'accessing' }
+ICIndicatorButton >> defaultIsToggleable [
+	^ true
+]
+
+{ #category : 'accessing' }
 ICIndicatorButton >> indicatorColor [
 	^ self value = 0 ifTrue: [ Color red ] ifFalse: [ Color green ]
 ]
