@@ -8,14 +8,16 @@ Class {
 		'widgetSize',
 		'button',
 		'isOn',
-		'value',
+		'currentValue',
 		'callbackDown',
 		'callBackUp',
 		'callback',
 		'isToggleable',
 		'onColor',
 		'offColor',
-		'id'
+		'id',
+		'fitsContent',
+		'buttonEventHandlers'
 	],
 	#category : 'CoypuIDE-button',
 	#package : 'CoypuIDE',
@@ -61,10 +63,59 @@ container openInSpace.
 
 ]
 
+{ #category : 'api - events' }
+ICButton >> addButtonEventHandler: aHandler [
+	self buttonEventHandlers add: aHandler.
+	self eventTarget addEventHandler: aHandler
+]
+
+{ #category : 'size' }
+ICButton >> applyButtonSize [
+	"Everything my button wears that depends on size. Subclasses add corner
+	radius, border, shadow and label size by overriding me and sending super."
+
+	button size: self buttonSize
+
+]
+
+{ #category : 'size' }
+ICButton >> applySize [
+	"Single pass: derive every dimension from widgetSize and push it onto the
+	parts. Safe to send any number of times, and safe before the parts exist."
+
+	self applyWidgetConstraints.
+	self padding: (BlInsets all: self widgetPadding).
+	button ifNotNil: [ self applyButtonSize ]
+]
+
+{ #category : 'size' }
+ICButton >> applyWidgetConstraints [
+	"How widgetSize reaches my own extent. Subclasses that hug their content
+	answer true to fitsContent and let padding and font drive their size instead."
+
+	self fitsContent
+		ifTrue: [
+			self constraintsDo: [ :c |
+				c horizontal fitContent.
+				c vertical fitContent ] ]
+		ifFalse: [ self extent: self widgetSize ]
+]
+
 { #category : 'evaluating' }
 ICButton >> backColor [
 	^ (Color veryVeryDarkGray alpha:1.0)
 
+]
+
+{ #category : 'size' }
+ICButton >> borderWidth [
+	^ ((self sizeUnit * self borderWidthRatio) max: 1) rounded
+
+]
+
+{ #category : 'defaults' }
+ICButton >> borderWidthRatio [
+	^ 1 / 20
 ]
 
 { #category : 'evaluating' }
@@ -75,6 +126,21 @@ ICButton >> button [
 { #category : 'evaluating' }
 ICButton >> button: anElement [
 	button:= anElement.
+]
+
+{ #category : 'api - events' }
+ICButton >> buttonEventHandlers [
+	^ buttonEventHandlers ifNil: [ buttonEventHandlers := OrderedCollection new ]
+]
+
+{ #category : 'defaults' }
+ICButton >> buttonInsetRatio [
+	^ 1 / 4
+]
+
+{ #category : 'size' }
+ICButton >> buttonSize [
+	^ widgetSize - (self sizeUnit * self buttonInsetRatio) asPoint
 ]
 
 { #category : 'accessing' }
@@ -113,6 +179,95 @@ ICButton >> callbackDown: aBlock [
 	callbackDown := aBlock
 ]
 
+{ #category : 'size' }
+ICButton >> cornerRadius [
+	^ self sizeUnit * self cornerRadiusRatio
+]
+
+{ #category : 'defaults' }
+ICButton >> cornerRadiusRatio [
+	^ 1 / 10
+]
+
+{ #category : 'accessing' }
+ICButton >> currentValue [ 
+^ currentValue 
+]
+
+{ #category : 'accessing' }
+ICButton >> currentValue: aNumber [
+"Bare setter: no toggle, no callback. Use setValue: for the public path."
+
+	currentValue := aNumber 
+]
+
+{ #category : 'defaults' }
+ICButton >> defaultFitsContent [
+	^ false
+
+]
+
+{ #category : 'accessing' }
+ICButton >> defaultIsToggleable [
+	^ false
+
+]
+
+{ #category : 'defaults' }
+ICButton >> defaultOffColor [
+	^ Color darkGray
+]
+
+{ #category : 'defaults' }
+ICButton >> defaultOnColor [
+
+	^ Color yellow
+]
+
+{ #category : 'defaults' }
+ICButton >> defaultWidgetSize [
+	^ 80 @ 80
+]
+
+{ #category : 'api - events' }
+ICButton >> eventTarget [
+	"The element that receives my mouse events. Subclasses that click somewhere
+	other than the button itself override me."
+
+	^ button
+]
+
+{ #category : 'api - events' }
+ICButton >> fire [
+	"One place for what a click does, shared by the down and up handlers."
+
+	self toggle.
+	self callback value: self currentValue
+]
+
+{ #category : 'accessing' }
+ICButton >> fitsContent [
+	^ fitsContent ifNil: [ fitsContent := self defaultFitsContent ]
+
+]
+
+{ #category : 'accessing' }
+ICButton >> fitsContent: aBoolean [
+	fitsContent := aBoolean.
+	button ifNotNil: [ self applySize ]
+]
+
+{ #category : 'size' }
+ICButton >> fontSize [
+	^ ((self sizeUnit * self fontSizeRatio) max: 6) rounded
+]
+
+{ #category : 'defaults' }
+ICButton >> fontSizeRatio [
+	^ 1 / 5
+
+]
+
 { #category : 'accessing' }
 ICButton >> id [ 
 ^ id
@@ -125,32 +280,31 @@ ICButton >> id: anIntegerOrAString [
 	id := anIntegerOrAString 
 ]
 
-{ #category : 'evaluating' }
+{ #category : 'initialization' }
 ICButton >> initialize [
-
 	super initialize.
-	self widgetSize: 80 @ 80.
-	self value: 0.
-
-	self onColor: Color red.
-	self offColor: Color darkGray.
-	"self initializeWidgetSize."
+	widgetSize := self defaultWidgetSize.
+	self currentValue: 0.
+	self onColor: self defaultOnColor.
+	self offColor: self defaultOffColor.
 	self initializeWidget.
 	self initializeClickBox.
 	self initializeButton.
-	self initializeEvents
+	self initializeEvents.
+	self applySize
 ]
 
 { #category : 'initialization' }
 ICButton >> initializeButton [
+	"Bare. Size comes from applyButtonSize."
 
 	self button: (BlElement new
 			 geometry: BlCircleGeometry new;
 			 background: self offColor;
-			 size: self widgetSize - 20 asPoint;
 			 constraintsDo: [ :c |
 				 c frame horizontal alignCenter.
-				 c frame vertical alignCenter ]).
+				 c frame vertical alignCenter ];
+			 yourself).
 	self addChild: self button
 ]
 
@@ -160,31 +314,22 @@ ICButton >> initializeClickBox [
 ^ 'Must be implemented in clickBox subclass'
 ]
 
-{ #category : 'evaluating' }
+{ #category : 'initialization' }
 ICButton >> initializeEvents [
-
-	button addEventHandler: (BlEventHandler
-			 on: BlMouseDownEvent
-			 do: [ :anEvent |
-				 self toggle.
-				 self callback value: self value ]).
-
+	self removeButtonEventHandlers.
+	self addButtonEventHandler:
+		(BlEventHandler on: BlMouseDownEvent do: [ :anEvent | self fire ]).
 	self isToggleable ifFalse: [
-	
-		button addEventHandler: (BlEventHandler
-				 on: BlMouseUpEvent
-				 do: [ :anEvent |
-					 self toggle.
-					 self callback value: self value ]) ]
+		self addButtonEventHandler:
+			(BlEventHandler on: BlMouseUpEvent do: [ :anEvent | self fire ]) ]
 ]
 
-{ #category : 'evaluating' }
+{ #category : 'initialization' }
 ICButton >> initializeWidget [
+	"No extent, no padding: applySize owns both."
 
-	self extent: self widgetSize.
 	self background: self backColor.
-	self layout: BlFrameLayout new.
-	self padding: (BlInsets all: 10)
+	self layout: BlFrameLayout new
 ]
 
 { #category : 'evaluating' }
@@ -206,16 +351,14 @@ ICButton >> isOn: anObject [
 
 { #category : 'accessing' }
 ICButton >> isToggleable [
-
-	^ isToggleable ifNil: [ isToggleable := false ]
+	^ isToggleable ifNil: [ isToggleable := self defaultIsToggleable ]
 ]
 
 { #category : 'accessing' }
 ICButton >> isToggleable: aBoolean [
-
+	self isToggleable = aBoolean ifTrue: [ ^ self ].
 	isToggleable := aBoolean.
-	"if toggleable state is changed, reinizializ event handlers"
-	self  initializeEvents
+	self eventTarget ifNotNil: [ self initializeEvents ]
 ]
 
 { #category : 'accessing' }
@@ -241,12 +384,47 @@ ICButton >> onColor: aColor [
 	onColor := aColor
 ]
 
+{ #category : 'defaults' }
+ICButton >> paddingRatio [
+	^ 1 / 8
+
+]
+
+{ #category : 'api - events' }
+ICButton >> removeButtonEventHandlers [
+	self eventTarget ifNil: [ ^ self ].
+	self buttonEventHandlers do: [ :each |
+		self eventTarget removeEventHandler: each ].
+	buttonEventHandlers := OrderedCollection new
+]
+
+{ #category : 'size' }
+ICButton >> resetSize [
+	self widgetSize: self defaultWidgetSize
+]
+
 { #category : 'evaluating' }
 ICButton >> setValue: req [
+	self currentValue = req ifFalse: [ self toggle ].
+	self callback value: req
+]
 
-"setting the value eternally correspond to a callback action"
-	self value = req ifFalse: [ self toggle ].
-	self callback  value: req
+{ #category : 'size' }
+ICButton >> shadowWidth [
+	^ self sizeUnit * self shadowWidthRatio
+]
+
+{ #category : 'defaults' }
+ICButton >> shadowWidthRatio [
+	^ 1 / 20
+
+]
+
+{ #category : 'size' }
+ICButton >> sizeUnit [
+	"Scalar reference for all proportional geometry: my shorter side."
+
+	^ widgetSize x min: widgetSize y
 ]
 
 { #category : 'evaluating' }
@@ -260,28 +438,26 @@ ICButton >> toggle [
 
 { #category : 'evaluating' }
 ICButton >> toggleValue [
-	self value = 0 
-		ifTrue: [ self value: 1 ] 
-		ifFalse: [ self value: 0 ].
+	self currentValue = 0
+		ifTrue: [ self currentValue: 1 ]
+		ifFalse: [ self currentValue: 0 ]
 ]
 
-{ #category : 'evaluating' }
-ICButton >> value [
-	^ value.
-]
+{ #category : 'size' }
+ICButton >> widgetPadding [
+	^ self sizeUnit * self paddingRatio
 
-{ #category : 'evaluating' }
-ICButton >> value: aBoolean [
-	value:= aBoolean.
 ]
 
 { #category : 'accessing' }
 ICButton >> widgetSize [
-
 	^ widgetSize
 ]
 
-{ #category : 'evaluating' }
-ICButton >> widgetSize: aSize [
-	widgetSize:= aSize.
+{ #category : 'accessing' }
+ICButton >> widgetSize: aPointOrNumber [
+	"My only size parameter. Accepts 120 or 120 @ 80."
+
+	widgetSize := aPointOrNumber asPoint.
+	button ifNotNil: [ self applySize ]
 ]

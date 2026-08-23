@@ -1,3 +1,29 @@
+"
+I am an ICIndicatorButton: a round LED-style indicator that shows red when my value is 0
+and green when it is 1. My glow always matches my current colour.
+
+I am an ICButton, so a click toggles me and runs my callback:
+```language=Pharo
+	ICIndicatorButton new
+		callback: [ :v | v traceCr ];
+		yourself
+```
+Sizing follows the family pattern. widgetSize: is my only size parameter, it accepts a
+number or a point, and everything else derives from it through applySize:
+
+	self new widgetSize: 160.
+	self new widgetSize: 120 @ 80.
+
+My disk takes half my shorter side (buttonInsetRatio) and my glow five sixteenths of it
+(shadowWidthRatio). Override either ratio to change my proportions, or indicatorColor to
+change my palette:
+```language=Pharo
+	ICIndicatorButton >> indicatorColor
+		^ self value = 0 ifTrue: [ Color brown ] ifFalse: [ Color yellow ]
+```
+resetSize puts me back to 80 @ 80.
+
+"
 Class {
 	#name : 'ICIndicatorButton',
 	#superclass : 'ICButton',
@@ -6,19 +32,40 @@ Class {
 	#tag : 'button'
 }
 
-{ #category : 'evaluating' }
+{ #category : 'initialization' }
+ICIndicatorButton >> applyButtonSize [
+	super applyButtonSize.
+	button effect: (BlGaussianShadowEffect
+			 color: (self indicatorColor alpha: 1.0)
+			 offset: 0 @ 0
+			 width: self shadowWidth)
+]
+
+{ #category : 'size' }
+ICIndicatorButton >> buttonInsetRatio [
+	^ 1 / 2
+]
+
+{ #category : 'accessing' }
+ICIndicatorButton >> indicatorColor [
+	^ self value = 0 ifTrue: [ Color red ] ifFalse: [ Color green ]
+]
+
+{ #category : 'initialization' }
 ICIndicatorButton >> initializeButton [
-	
 	self button: (BlElement new
-            geometry: BlCircleGeometry new;
-				background: Color red;
-            size: widgetSize -40 asPoint;
-				effect: (BlGaussianShadowEffect color: (Color red alpha:1.0)   offset: 0@ 0  width: 25);
-           	constraintsDo: [ :c |
-					c frame horizontal alignCenter.
-					c frame vertical alignCenter.
-				]).
-	self addChild: self button.
+			 geometry: BlCircleGeometry new;
+			 background: Color red;
+			 constraintsDo: [ :c |
+				 c frame horizontal alignCenter.
+				 c frame vertical alignCenter ];
+			 yourself).
+	self addChild: self button
+]
+
+{ #category : 'defaults' }
+ICIndicatorButton >> shadowWidthRatio [
+	^ 5 / 16
 ]
 
 { #category : 'evaluating' }

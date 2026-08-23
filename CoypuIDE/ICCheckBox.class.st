@@ -25,6 +25,16 @@ ICCheckBox >> clickBox: aBlElement [
 clickBox := aBlElement 
 ]
 
+{ #category : 'api - events' }
+ICCheckBox >> defaultIsToggleable [
+	^ true
+]
+
+{ #category : 'api - events' }
+ICCheckBox >> eventTarget [
+	^ clickBox
+]
+
 { #category : 'initialization' }
 ICCheckBox >> initializeClickBox [
 
@@ -38,7 +48,7 @@ ICCheckBox >> initializeClickBox [
 	self addChild: clickBox
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'initialization' }
 ICCheckBox >> initializeClickSymbol [
 
 	| check |
